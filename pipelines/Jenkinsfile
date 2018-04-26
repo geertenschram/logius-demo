@@ -1,0 +1,177 @@
+pipeline {
+  agent {
+    label 'maven'
+  }
+  environment {
+    devTemplate = 'templates/httpd-example-dev.yaml'
+    prodTemplate = 'templates/httpd-example-prod.yaml'
+    projectbase = 'demo'
+    appname = 'httpd-example'
+    buildproject = "${projectbase}-cicd"
+    testproject = "${projectbase}-test"
+    prodproject = "${projectbase}-prod"
+    buildconfig = "bc/${appname}"
+  }
+  stages {
+
+    stage('Ensure BuildConfig exists in cicd-demo') {
+      when {
+        expression {
+          openshift.withCluster() {
+            openshift.withProject("${buildproject}") {
+              return !openshift.selector("${buildconfig}").exists();
+            }
+          }
+        }
+      }
+      steps {
+        script {
+          openshift.withCluster() {
+            openshift.withProject("${buildproject}") {
+              openshift.create(openshift.process("-f", devTemplate, "-p NAME=${appname}"))
+            }
+          }
+        }
+      }
+    }
+    stage('Build in cicd-demo') {
+      steps {
+        script {
+          openshift.withCluster() {
+            openshift.withProject("${buildproject}") {
+              myBuild = openshift.selector(buildconfig).startBuild()
+              myBuild.logs("-f")
+            }
+          }
+        }
+      }
+    }
+    stage('Deploy in cicd-demo') {
+      steps {
+        script {
+          openshift.withCluster() {
+            openshift.withProject("${buildproject}") {
+              newDeploy = openshift.selector("dc/${appname}").rollout()
+              newDeploy.latest()
+              newDeploy.status('-w')
+            }
+          }
+        }
+      }
+    }
+
+    stage('Test in builder project') {
+      steps {
+        script {
+          openshift.withCluster() {
+            openshift.withProject(buildproject) {
+              cicdRoute = openshift.selector("route/${appname}")
+              host = cicdRoute.object().spec.host
+              sh "rm -f koekjes"
+              sh "curl -v --cookie-jar koekjes https://${host} |& grep -q 200"
+            }
+          }
+        }
+      }
+    }
+    stage('Ensure DeploymentConfig exists in testing') {
+      when {
+        expression {
+          openshift.withCluster() {
+            openshift.withProject("${testproject}") {
+              return !openshift.selector("dc/${appname}").exists();
+            }
+          }
+        }
+      }
+      steps {
+        script {
+          openshift.withCluster() {
+            openshift.withProject("${testproject}") {
+              openshift.create(openshift.process("-f", prodTemplate, "-p NAME=${appname}"))
+            }
+          }
+        }
+      }
+    }
+    stage('Tag image from cicd-demo to testing') {
+      steps {
+        script {
+          openshift.withCluster() {
+            openshift.withProject("${buildproject}") {
+              openshift.tag("${buildproject}/${appname}:latest", "${testproject}/${appname}:latest")
+              openshift.tag("${buildproject}/${appname}:latest", "${testproject}/${appname}:${BUILD_ID}")
+            }
+          }
+        }
+      }
+    }
+    stage('Deploy in testing') {
+      steps {
+        script {
+          openshift.withCluster() {
+            openshift.withProject("${testproject}") {
+              newDeploy = openshift.selector("dc/${appname}").rollout()
+              newDeploy.latest()
+              newDeploy.status('-w')
+            }
+          }
+        }
+      }
+    }
+    stage('Ask for approval') {
+      steps {
+        script {
+          openshift.withCluster() {
+            input("Deploy to Production?")
+          }
+        }
+      }
+    }
+    stage('Ensure DeploymentConfig exists in productie') {
+      when {
+        expression {
+          openshift.withCluster() {
+            openshift.withProject("${prodproject}") {
+              return !openshift.selector("dc/${appname}").exists();
+            }
+          }
+        }
+      }
+      steps {
+        script {
+          openshift.withCluster() {
+            openshift.withProject("${prodproject}") {
+              openshift.create(openshift.process("-f", prodTemplate, "-p NAME=${appname}"))
+            }
+          }
+        }
+      }
+    }
+    stage('Tag image from test to productie') {
+      steps {
+        script {
+          openshift.withCluster() {
+            openshift.withProject("${prodproject}") {
+              openshift.tag("${testproject}/${appname}:latest", "${prodproject}/${appname}:latest")
+              openshift.tag("${testproject}/${appname}:latest", "${prodproject}/${appname}:${BUILD_ID}")
+            }
+          }
+        }
+      }
+    }
+    stage('Deploy in Productie') {
+      steps {
+        script {
+          openshift.withCluster() {
+            openshift.withProject("${prodproject}") {
+              newDeploy = openshift.selector("dc/${appname}").rollout()
+              newDeploy.latest()
+              newDeploy.status('-w')
+            }
+          }
+        }
+      }
+    }
+  }
+}
