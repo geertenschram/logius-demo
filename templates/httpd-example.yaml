@@ -2,7 +2,7 @@
 kind: Template
 apiVersion: v1
 metadata:
-  name: httpd-example
+  name: cicd-example-template
   annotations:
     openshift.io/display-name: httpd
     description: An example httpd application with no database.
@@ -13,7 +13,7 @@ message: |-
 
   For more information about using this template, including OpenShift considerations, see https://github.com/openshift/httpd-ex/blob/master/README.md.
 labels:
-  template: httpd-example
+  template: cicd-example-template
 objects:
 - kind: Service
   apiVersion: v1
@@ -44,6 +44,30 @@ objects:
     name: "${NAME}"
     annotations:
       description: Keeps track of changes in the application image
+- kind: BuildConfig
+  apiVersion: v1
+  metadata:
+    name: "${NAME}"
+    annotations:
+      description: Defines how to build the application
+  spec:
+    source:
+      type: Git
+      git:
+        uri: "${SOURCE_REPOSITORY_URL}"
+        ref: "${SOURCE_REPOSITORY_REF}"
+      contextDir: "${CONTEXT_DIR}"
+    strategy:
+      type: Source
+      sourceStrategy:
+        from:
+          kind: ImageStreamTag
+          name: httpd:latest
+          namespace: openshift
+    output:
+      to:
+        kind: ImageStreamTag
+        name: "${NAME}:latest"
 - kind: DeploymentConfig
   apiVersion: v1
   metadata:
@@ -58,10 +82,10 @@ objects:
       imageChangeParams:
         automatic: false
         containerNames:
-        - httpd-example
+        - ${NAME}
         from:
           kind: ImageStreamTag
-          name: httpd-example:latest
+          name: ${NAME}:latest
     replicas: 1
     selector:
       name: "${NAME}"
@@ -72,7 +96,7 @@ objects:
           name: "${NAME}"
       spec:
         containers:
-        - name: httpd-example
+        - name: ${NAME}
           image: " "
           ports:
           - containerPort: 8080
@@ -96,7 +120,7 @@ parameters:
   displayName: Name
   description: The name assigned to all of the frontend objects defined in this template.
   required: true
-  value: httpd-example
+  value: demo
 - name: MEMORY_LIMIT
   displayName: Memory Limit
   description: Maximum amount of memory the container can use.
@@ -106,11 +130,12 @@ parameters:
   displayName: Git Repository URL
   description: The URL of the repository with your application source code.
   required: true
-  value: https://github.com/wanderboessenkool/cicd-demo.git
+  value: https://gitlab.com/wanderb/cicd-demo.git
 - name: SOURCE_REPOSITORY_REF
   displayName: Git Reference
   description: Set this to a branch name, tag or other ref of your repository if you
     are not using the default branch.
+  value: master
 - name: CONTEXT_DIR
   displayName: Context Directory
   description: Set this to the relative path to your project if it is not in the root

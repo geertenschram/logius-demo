@@ -3,10 +3,13 @@ pipeline {
     label 'maven'
   }
   environment {
-    devTemplate = 'templates/httpd-example-dev.yaml'
-    prodTemplate = 'templates/httpd-example-prod.yaml'
-    projectbase = 'demo'
-    appname = 'httpd-example'
+    //devTemplate = 'templates/httpd-example-dev.yaml'
+    //prodTemplate = 'templates/httpd-example-prod.yaml'
+    // projectbase = 'demo'
+    // appname = 'httpd-example'
+    template = "${TEMPLATE}"
+    projectbase = "${PROJECTBASE}"
+    appname = "${APPLICATION_NAME}"
     buildproject = "${projectbase}-cicd"
     testproject = "${projectbase}-test"
     prodproject = "${projectbase}-prod"
@@ -14,27 +17,38 @@ pipeline {
   }
   stages {
 
-    stage('Ensure BuildConfig exists in cicd-demo') {
-      when {
-        expression {
-          openshift.withCluster() {
-            openshift.withProject("${buildproject}") {
-              return !openshift.selector("${buildconfig}").exists();
-            }
-          }
-        }
-      }
+//    stage('Ensure BuildConfig exists in cicd-demo') {
+//      when {
+//        expression {
+//          openshift.withCluster() {
+//            openshift.withProject("${buildproject}") {
+//              return !openshift.selector("${buildconfig}").exists();
+//            }
+//          }
+//        }
+//      }
+//      steps {
+//        script {
+//          openshift.withCluster() {
+//            openshift.withProject("${buildproject}") {
+//              openshift.apply(openshift.process("-f", template, "-p NAME=${appname}", "-p SOURCE_REPOSITORY_URL=${SOURCE_REPOSITORY_URL}", "-p SOURCE_REPOSITORY_REF=${SOURCE_REPOSITORY_REF}", "-p CONTEXT_DIR=${CONTEXT_DIR}"))
+//            }
+//          }
+//        }
+//      }
+//    }
+    stage('update BuildConfig cicd project') {
       steps {
         script {
           openshift.withCluster() {
             openshift.withProject("${buildproject}") {
-              openshift.create(openshift.process("-f", devTemplate, "-p NAME=${appname}"))
+              openshift.apply(openshift.process("-f", template, "-p NAME=${appname}", "-p SOURCE_REPOSITORY_URL=${SOURCE_REPOSITORY_URL}", "-p SOURCE_REPOSITORY_REF=${SOURCE_REPOSITORY_REF}", "-p CONTEXT_DIR=${CONTEXT_DIR}"))
             }
           }
         }
       }
     }
-    stage('Build in cicd-demo') {
+    stage('Build in cicd project') {
       steps {
         script {
           openshift.withCluster() {
@@ -88,13 +102,14 @@ pipeline {
         script {
           openshift.withCluster() {
             openshift.withProject("${testproject}") {
-              openshift.create(openshift.process("-f", prodTemplate, "-p NAME=${appname}"))
+              openshift.apply(openshift.process("-f", template, "-p NAME=${appname}"))
+              openshift.selector("${buildconfig}").delete()
             }
           }
         }
       }
     }
-    stage('Tag image from cicd-demo to testing') {
+    stage('Tag image from cicd to testing') {
       steps {
         script {
           openshift.withCluster() {
@@ -142,7 +157,8 @@ pipeline {
         script {
           openshift.withCluster() {
             openshift.withProject("${prodproject}") {
-              openshift.create(openshift.process("-f", prodTemplate, "-p NAME=${appname}"))
+              openshift.apply(openshift.process("-f", template, "-p NAME=${appname}"))
+              openshift.selector("${buildconfig}").delete()
             }
           }
         }
