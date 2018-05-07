@@ -3,10 +3,6 @@ pipeline {
     label 'maven'
   }
   environment {
-    //devTemplate = 'templates/httpd-example-dev.yaml'
-    //prodTemplate = 'templates/httpd-example-prod.yaml'
-    // projectbase = 'demo'
-    // appname = 'httpd-example'
     template = "${TEMPLATE}"
     projectbase = "${PROJECTBASE}"
     appname = "${APPLICATION_NAME}"
@@ -17,26 +13,6 @@ pipeline {
   }
   stages {
 
-//    stage('Ensure BuildConfig exists in cicd-demo') {
-//      when {
-//        expression {
-//          openshift.withCluster() {
-//            openshift.withProject("${buildproject}") {
-//              return !openshift.selector("${buildconfig}").exists();
-//            }
-//          }
-//        }
-//      }
-//      steps {
-//        script {
-//          openshift.withCluster() {
-//            openshift.withProject("${buildproject}") {
-//              openshift.apply(openshift.process("-f", template, "-p NAME=${appname}", "-p SOURCE_REPOSITORY_URL=${SOURCE_REPOSITORY_URL}", "-p SOURCE_REPOSITORY_REF=${SOURCE_REPOSITORY_REF}", "-p CONTEXT_DIR=${CONTEXT_DIR}"))
-//            }
-//          }
-//        }
-//      }
-//    }
     stage('update BuildConfig cicd project') {
       steps {
         script {
