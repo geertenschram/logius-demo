@@ -44,11 +44,11 @@ This example creates the same application as the previous one, but using differe
 
 
 ``` bash
-oc new-project extra-cicd
+oc new-project logius-cicd
 oc new-app jenkins-persistent
-oc new-project extra-test
-oc new-project extra-prod
-oc policy add-role-to-user edit system:serviceaccount:extra-cicd:jenkins -n extra-test
-oc policy add-role-to-user edit system:serviceaccount:extra-cicd:jenkins -n extra-prod
-oc process -f pipelines/pipeline-template.yaml -p PROJECTBASE=extra -p APPLICATION_NAME=flopsels -p SOURCE_REPOSITORY_URL=https://your.clone.here/repo.git | oc create -f - -n extra-cicd
+oc new-project logius-test
+oc new-project logius-prod
+oc policy add-role-to-user edit system:serviceaccount:logius-cicd:jenkins -n logius-test
+oc policy add-role-to-user edit system:serviceaccount:logius-cicd:jenkins -n logius-prod
+oc process -f pipelines/pipeline-template.yaml -p PROJECTBASE=logius -p APPLICATION_NAME=flopsels -p SOURCE_REPOSITORY_URL=https://github.com/geertenschram/logius-demo.git | oc create -f - -n logius-cicd
 ```
