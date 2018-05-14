@@ -50,5 +50,5 @@ oc new-project logius-test
 oc new-project logius-prod
 oc policy add-role-to-user edit system:serviceaccount:logius-cicd:jenkins -n logius-test
 oc policy add-role-to-user edit system:serviceaccount:logius-cicd:jenkins -n logius-prod
-oc process -f pipelines/pipeline-template.yaml -p PROJECTBASE=logius -p APPLICATION_NAME=flopsels -p SOURCE_REPOSITORY_URL=https://github.com/geertenschram/logius-demo.git | oc create -f - -n logius-cicd
+oc process -f pipelines/pipeline-template.yaml -p PROJECTBASE=logius -p APPLICATION_NAME=my_first_app -p SOURCE_REPOSITORY_URL=https://github.com/geertenschram/logius-demo.git | oc create -f - -n logius-cicd
 ```
