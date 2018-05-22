@@ -36,30 +36,7 @@ pipeline {
         }
       }
     }
-    
-    stage('Ensure DeploymentConfig exists in cicd / builder project') {
-      when {
-        expression {
-          openshift.withCluster() {
-            openshift.withProject("${buildproject}") {
-              return !openshift.selector("dc/${appname}").exists();
-            }
-          }
-        }
-      }
-      steps {
-        script {
-          openshift.withCluster() {
-            openshift.withProject("${buildproject}") {
-              openshift.apply(openshift.process("-f", template, "-p NAME=${appname}"))
-              openshift.selector("${buildconfig}").delete()
-            }
-          }
-        }
-      }
-    }
-    
-    stage('Deploy in cicd / builder project') {
+    stage('Deploy in cicd-demo') {
       steps {
         script {
           openshift.withCluster() {
