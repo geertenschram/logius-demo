@@ -24,7 +24,7 @@ pipeline {
         }
       }
     }
-    stage('Build in cicd project') {
+    stage('Bouwen in het cicd project') {
       steps {
         script {
           openshift.withCluster() {
@@ -56,8 +56,8 @@ pipeline {
           }
         }
       }
-    } */
-    stage('Deploy in cicd-demo') {
+    } 
+    stage('Uitrol in het cicd project demo') {
       steps {
         script {
           openshift.withCluster() {
@@ -70,9 +70,9 @@ pipeline {
           }
         }
       }
-    }
+    } 
 
-    stage('Test in builder project') {
+    stage('Nu doen we een testje in het cicd project') {
       steps {
         script {
           openshift.withCluster() {
@@ -85,8 +85,9 @@ pipeline {
           }
         }
       }
-    }
-/*    stage('Ensure DeploymentConfig exists in testing') {
+    } */ 
+    
+    stage('Ensure DeploymentConfig exists in testing') {
       when {
         expression {
           openshift.withCluster() {
@@ -106,7 +107,7 @@ pipeline {
           }
         }
       }
-    } */
+    }
     stage('Tag image from cicd to testing') {
       steps {
         script {
@@ -132,6 +133,22 @@ pipeline {
         }
       }
     }
+    
+    stage('Testen in het test-project (duh)') {
+      steps {
+        script {
+          openshift.withCluster() {
+            openshift.withProject(testproject) {
+              cicdRoute = openshift.selector("route/${appname}")
+              host = cicdRoute.object().spec.host
+              sh "rm -f koekjes"
+              sh "curl -v --cookie-jar koekjes https://${host} |& grep -q 200"
+            }
+          }
+        }
+      }
+    }
+    
     stage('Ask for approval') {
       steps {
         script {
@@ -141,7 +158,7 @@ pipeline {
         }
       }
     }
-/*    stage('Ensure DeploymentConfig exists in productie') {
+    stage('Ensure DeploymentConfig exists in productie') {
       when {
         expression {
           openshift.withCluster() {
@@ -161,7 +178,7 @@ pipeline {
           }
         }
       }
-    } */
+    }
     stage('Tag image from test to productie') {
       steps {
         script {
