@@ -36,7 +36,7 @@ pipeline {
         }
       }
     }
-    stage('Ensure DeploymentConfig exists in build project') {
+/*    stage('Ensure DeploymentConfig exists in build project') {
       when {
         expression {
           openshift.withCluster() {
@@ -56,7 +56,7 @@ pipeline {
           }
         }
       }
-    }
+    } */
     stage('Deploy in cicd-demo') {
       steps {
         script {
@@ -86,7 +86,7 @@ pipeline {
         }
       }
     }
-    stage('Ensure DeploymentConfig exists in testing') {
+/*    stage('Ensure DeploymentConfig exists in testing') {
       when {
         expression {
           openshift.withCluster() {
@@ -106,7 +106,7 @@ pipeline {
           }
         }
       }
-    }
+    } */
     stage('Tag image from cicd to testing') {
       steps {
         script {
@@ -141,7 +141,7 @@ pipeline {
         }
       }
     }
-    stage('Ensure DeploymentConfig exists in productie') {
+/*    stage('Ensure DeploymentConfig exists in productie') {
       when {
         expression {
           openshift.withCluster() {
@@ -161,7 +161,7 @@ pipeline {
           }
         }
       }
-    }
+    } */
     stage('Tag image from test to productie') {
       steps {
         script {
